@@ -1,0 +1,124 @@
+<style>
+    /* ... (CSS sebelumnya tetap sama, tambahkan ini) ... */
+    
+    #btn-charge:active {
+        transform: scale(0.98);
+        filter: brightness(1.2);
+    }
+
+    .tunnel-wall {
+        position: absolute;
+        width: 15%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,0,123,0.2), transparent);
+        border-left: 2px dashed var(--danger);
+        border-right: 2px dashed var(--danger);
+        left: 50%;
+        transform: translateX(-50%);
+        backdrop-filter: blur(2px);
+    }
+
+    /* Efek Glow Dinamis */
+    .particle-glow {
+        box-shadow: 0 0 20px var(--gold), 0 0 40px var(--gold);
+    }
+</style>
+
+<div id="tunnel-extras" style="display:none; position: absolute; inset: 0; z-index: 2;">
+    <div class="tunnel-wall"></div>
+    <div id="tunnel-particle" style="position:absolute; width:18px; height:18px; background:var(--gold); border-radius:50%; left:10%; top:50%; transform: translateY(-50%); z-index: 10;"></div>
+</div>
+
+<script>
+    /* ... (Gunakan logika JavaScript yang sudah dioptimasi di bawah) ... */
+
+    // --- TUNNELING ENGINE OPTIMIZED ---
+    function startCharge(e) {
+        if(activeTab !== 'tunnel') return;
+        e.preventDefault(); 
+        
+        charging = true; 
+        charge = 0;
+        
+        // Reset state
+        p.style.transition = "none";
+        p.style.left = "10%";
+        p.style.opacity = "1";
+        p.classList.add('particle-glow');
+        
+        document.getElementById('val-state').innerText = "Charging...";
+        btnCharge.style.background = "#fff"; // Feedback warna saat tekan
+        
+        chargeLoop = setInterval(() => {
+            if(!charging) return;
+            charge = Math.min(charge + 1.5, 100);
+            document.getElementById('val-res').innerText = Math.floor(charge) + "%";
+            
+            // Visual feedback: Partikel membesar & bergetar sesuai energi
+            const jitter = (charge / 100) * 5;
+            p.style.transform = `translateY(-50%) translate(${(Math.random()-0.5)*jitter}px, ${(Math.random()-0.5)*jitter}px) scale(${1 + charge/150})`;
+            
+            // Perubahan warna tombol
+            btnCharge.style.filter = `hue-rotate(${charge}deg)`;
+        }, 20);
+    }
+
+    function releaseCharge() {
+        if(!charging) return;
+        charging = false;
+        clearInterval(chargeLoop);
+        
+        btnCharge.style.background = "var(--gold)";
+        btnCharge.style.filter = "none";
+        p.classList.remove('particle-glow');
+
+        const isSuccess = charge > 75; 
+        
+        // Animasi Tembakan
+        p.style.transition = "all 0.6s cubic-bezier(0.5, 0, 0.5, 1)";
+        
+        if(isSuccess) {
+            // Animasi Menembus (Efek Quantum: Meredup saat di dalam tembok)
+            setTimeout(() => { p.style.opacity = "0.3"; }, 200);
+            setTimeout(() => { p.style.opacity = "1"; }, 400);
+            
+            p.style.left = "85%";
+            document.getElementById('val-state').innerText = "TUNNELING SUCCESS";
+            document.getElementById('val-state').style.color = "var(--accent)";
+        } else {
+            // Animasi Terpantul
+            p.style.left = "42%";
+            document.getElementById('val-state').innerText = "REFLECTED";
+            document.getElementById('val-state').style.color = "var(--danger)";
+            
+            setTimeout(() => {
+                p.style.transition = "all 0.8s ease-out";
+                p.style.left = "10%";
+            }, 600);
+        }
+    }
+
+    // Perbaikan Rendering LaTeX agar tidak overlap/kosong
+    function updateMath(mode) {
+        const display = document.getElementById('math-display');
+        display.style.opacity = "0";
+        setTimeout(() => {
+            display.innerHTML = formulas[mode];
+            MathJax.typesetPromise([display]).then(() => {
+                display.style.opacity = "1";
+            });
+        }, 100);
+    }
+
+    // Integrasi ke switchTab yang sudah ada
+    const originalSwitchTab = switchTab;
+    switchTab = function(mode, btn) {
+        originalSwitchTab(mode, btn);
+        updateMath(mode); // Gunakan fungsi render math yang baru
+        if(mode === 'tunnel') resetTunnelParticle();
+        
+        // Update warna delta energy berdasarkan mode
+        const resVal = document.getElementById('val-res');
+        resVal.style.color = (mode === 'tunnel' && charge > 75) ? 'var(--gold)' : 'var(--accent)';
+    }
+</script>
